@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user preferences and goals.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "calorieGoal": { "type": "number" },
+        "waterGoal": { "type": "number" }
+      },
+      "required": ["uid", "displayName", "calorieGoal", "waterGoal"]
+    },
+    "LogEntry": {
+      "title": "Activity Log",
+      "description": "A log entry for food or water intake.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "type": { "type": "string", "enum": ["food", "water"] },
+        "calories": { "type": "number" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "amount": { "type": "number" },
+        "nutrients": {
+          "type": "object",
+          "properties": {
+            "protein": { "type": "number" },
+            "carbs": { "type": "number" },
+            "fat": { "type": "number" }
+          }
+        }
+      },
+      "required": ["id", "userId", "timestamp", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/logs/{logId}": {
+      "schema": "LogEntry",
+      "description": "Individual log entries."
+    }
+  }
+}

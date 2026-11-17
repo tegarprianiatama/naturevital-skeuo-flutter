@@ -20,6 +20,20 @@ class HomeScreen extends ConsumerWidget {
     final state = ref.watch(appControllerProvider);
     final controller = ref.read(appControllerProvider.notifier);
 
+    ref.listen(appControllerProvider.select((s) => s.error), (_, error) {
+      if (error == null) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(error),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      controller.clearError();
+    });
+
     return Scaffold(
       body: SafeArea(
         bottom: false,

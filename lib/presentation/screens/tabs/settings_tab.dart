@@ -1,9 +1,13 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../core/providers.dart';
 import '../../../core/skeuo_theme.dart';
 import '../../../domain/repositories/user_repository.dart';
 import '../../state/app_controller.dart';
+import '../../widgets/skeuo_button.dart';
 import '../../widgets/skeuo_surface.dart';
 import '../../widgets/ui_text.dart';
 
@@ -92,6 +96,11 @@ class SettingsTab extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _BackupCard(
+          onExport: () => _exportBackup(context, ref),
+          onImport: () => _importBackup(context, ref),
+        ),
         const SizedBox(height: 28),
         const Center(
           child: Text(
@@ -106,6 +115,100 @@ class SettingsTab extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(appControllerProvider).user;
+    if (user == null) return;
+
+    try {
+      final result = await ref
+          .read(backupServiceProvider)
+          .exportToFile(user.uid);
+      if (!context.mounted) return;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(result.file.path)],
+          subject: 'NatureVital backup',
+          text:
+              'NatureVital backup — ${result.logCount} logs, '
+              '${result.photoCount} photos.',
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      _showMessage(context, 'Export failed: $error');
+    }
+  }
+
+  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(appControllerProvider).user;
+    if (user == null) return;
+
+    const typeGroup = XTypeGroup(
+      label: 'NatureVital backup',
+      extensions: ['json'],
+    );
+    final picked = await openFile(acceptedTypeGroups: [typeGroup]);
+    if (picked == null) return;
+
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Skeuo.bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Import backup?'),
+        content: const Text(
+          'Logs in the file will be merged into this account. '
+          'Existing entries with the same id are replaced.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('IMPORT'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final result = await ref
+          .read(backupServiceProvider)
+          .importFromJson(
+            await picked.readAsString(),
+            currentUid: user.uid,
+            displayName: user.displayName,
+          );
+      await ref.read(appControllerProvider.notifier).reloadFromStorage();
+      if (!context.mounted) return;
+
+      final skipped = result.skippedLogs > 0
+          ? ', ${result.skippedLogs} skipped'
+          : '';
+      _showMessage(
+        context,
+        'Imported ${result.logCount} logs$skipped '
+        '(${result.photoCount} photos).',
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      _showMessage(context, 'Import failed: $error');
+    }
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      );
   }
 
   Future<void> _confirmLogout(
@@ -230,6 +333,56 @@ class _GoalInputState extends State<_GoalInput> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BackupCard extends StatelessWidget {
+  const _BackupCard({required this.onExport, required this.onImport});
+
+  final VoidCallback onExport;
+  final VoidCallback onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeuoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SkeuoLabel('Backup', italic: true, letterSpacing: 1.4),
+          const SizedBox(height: 8),
+          const Text(
+            'Data is stored only on this device. Export a backup regularly '
+            'and keep it somewhere safe.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SkeuoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  onTap: onExport,
+                  child: const Text('EXPORT'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SkeuoButton(
+                  variant: SkeuoButtonVariant.secondary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  onTap: onImport,
+                  child: const Text('IMPORT'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

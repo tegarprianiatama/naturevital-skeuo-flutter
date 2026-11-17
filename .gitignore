@@ -75,3 +75,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+
+#doc
+codebase-analysis-docs

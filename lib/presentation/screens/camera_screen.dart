@@ -227,11 +227,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     final bytes = _imageBytes;
     if (analysis == null || bytes == null) return;
 
-    final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-    
-    // Fire and forget, controller handles navigation and errors
-    ref.read(appControllerProvider.notifier).addFood(analysis, dataUrl);
-    
+    final String fileName;
+    try {
+      // Photos live as real files on disk; SQLite only stores the file name.
+      fileName = await ref.read(localPhotoStoreProvider).save(bytes);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'Could not save photo: $error');
+      return;
+    }
+
+    // Fire and forget, controller handles reload and errors.
+    ref.read(appControllerProvider.notifier).addFood(analysis, fileName);
+
     if (mounted) Navigator.of(context).pop();
   }
 

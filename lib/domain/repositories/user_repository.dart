@@ -1,7 +1,8 @@
 import '../entities/user_profile.dart';
 
 abstract interface class IUserRepository {
-  Stream<UserProfile?> watchProfile(String userId);
+  /// Returns the stored profile, or null when the document does not exist.
+  Future<UserProfile?> fetchProfile(String userId);
 
   Future<void> createDefaultProfile(UserProfile profile);
 
@@ -12,7 +13,8 @@ enum GoalField {
   calorieGoal('calorieGoal'),
   waterGoal('waterGoal');
 
-  const GoalField(this.firestoreName);
+  const GoalField(this.columnName);
 
-  final String firestoreName;
+  /// SQLite column name in the `users` table.
+  final String columnName;
 }

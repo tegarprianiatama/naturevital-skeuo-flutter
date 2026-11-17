@@ -9,8 +9,6 @@ class AppConfig {
       dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
   static String get firebaseProjectId =>
       dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
-  static String get firebaseStorageBucket =>
-      dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '';
   static String get firebaseAuthDomain =>
       dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '';
   static String get googleServerClientId =>

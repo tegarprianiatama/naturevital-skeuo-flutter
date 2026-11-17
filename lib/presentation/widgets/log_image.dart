@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import '../../data/local/local_photo_store.dart';
 
 class LogImage extends StatelessWidget {
   const LogImage({
@@ -42,6 +45,21 @@ class LogImage extends StatelessWidget {
       );
     }
 
-    return fallback ?? const SizedBox.shrink();
+    // Anything else is a local file name managed by LocalPhotoStore.
+    return FutureBuilder<File>(
+      future: LocalPhotoStore().fileFor(imageUrl),
+      builder: (context, snapshot) {
+        final file = snapshot.data;
+        if (file == null || !file.existsSync()) {
+          return fallback ?? const SizedBox.shrink();
+        }
+        return Image.file(
+          file,
+          fit: fit,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => fallback ?? const SizedBox.shrink(),
+        );
+      },
+    );
   }
 }

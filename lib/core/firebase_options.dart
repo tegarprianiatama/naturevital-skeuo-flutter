@@ -10,7 +10,6 @@ class DefaultFirebaseOptions {
     appId: AppConfig.firebaseAppId,
     messagingSenderId: AppConfig.firebaseMessagingSenderId,
     projectId: AppConfig.firebaseProjectId,
-    storageBucket: AppConfig.firebaseStorageBucket,
     authDomain: AppConfig.firebaseAuthDomain,
   );
 }
